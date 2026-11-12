@@ -1,0 +1,120 @@
+# SPDX-License-Identifier: Unlicense
+# Every push: the image built on amd64 and arm64, its tools checked and its scripts' tests run in it.
+# A tag (YYYY.MM.DD, or YYYY.MM.DD.N for a second one that day) publishes both as one multi-arch
+# image, ghcr.io/overpressure/builder:TAG, and a release naming its digest, with each variant's
+# packages and versions.
+name: Image
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/overpressure/builder
+
+jobs:
+  image:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write # a tag's variant
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: The image
+        run: docker build --pull -t builder:test image
+      - name: Its tools
+        run: |
+          cross=aarch64-linux-gnu-
+          [ "${{ matrix.arch }}" = arm64 ] && cross=
+          docker run --rm --entrypoint bash builder:test -euc "
+            ${cross}gcc --version | head -1
+            ${cross}ld --version | head -1
+            pahole --version
+            dtc --version
+            clang-20 --version | head -1
+            ld.lld-20 --version
+            qemu-aarch64-static --version | head -1
+            make --version | head -1
+            python3 --version
+            git --version
+            shellcheck --version | sed -n 2p
+            for script in overpressure-entrypoint overpressure-binfmt overpressure-hand-back; do
+              [ -x /usr/local/bin/\$script ]
+            done
+            wc -l < /usr/share/overpressure-packages.txt"
+      - name: Its scripts' tests, in it, as a build runs them
+        run: |
+          docker run --rm --privileged -v "$PWD:/work" builder:test bash -euc '
+            shellcheck image/*.sh
+            python3 -m unittest -v'
+      - name: Its packages
+        run: docker run --rm --entrypoint cat builder:test /usr/share/overpressure-packages.txt > packages-${{ matrix.arch }}.txt
+      - name: The variant
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker tag builder:test "$IMAGE:$GITHUB_REF_NAME-${{ matrix.arch }}"
+          docker push "$IMAGE:$GITHUB_REF_NAME-${{ matrix.arch }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: packages-${{ matrix.arch }}
+          path: packages-${{ matrix.arch }}.txt
+          if-no-files-found: error
+
+  publish:
+    needs: image
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: packages-*
+          merge-multiple: true
+      - name: The multi-arch image
+        id: image
+        run: |
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker buildx imagetools create -t "$IMAGE:$GITHUB_REF_NAME" \
+            "$IMAGE:$GITHUB_REF_NAME-amd64" "$IMAGE:$GITHUB_REF_NAME-arm64"
+          digest=$(docker buildx imagetools inspect "$IMAGE:$GITHUB_REF_NAME" --format '{{json .Manifest}}' |
+            python3 -c 'import json, sys; print(json.load(sys.stdin)["digest"])')
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "$IMAGE:$GITHUB_REF_NAME@$digest"
+      - name: The release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          {
+            echo "Pin it as:"
+            echo
+            echo '```'
+            echo "$IMAGE:$GITHUB_REF_NAME@$DIGEST"
+            echo '```'
+            echo
+            echo "Built from ${GITHUB_SHA}; the packages of each variant are attached."
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "$GITHUB_REF_NAME" --notes-file notes.md packages-amd64.txt packages-arm64.txt
