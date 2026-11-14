@@ -22,7 +22,8 @@ RUN set -eu; \
       make gcc libc6-dev $cross flex bison bc git perl cpio libssl-dev libelf-dev dwarves device-tree-compiler \
       shellcheck; \
     rm -rf /var/lib/apt/lists/*; \
-    dpkg-query -W -f '${Package} ${Version} ${Architecture}\n' | sort > /usr/share/overpressure-packages.txt; \
+    dpkg-query -W -f '${Package} ${Version} ${Architecture} ${source:Package} ${source:Version}\n' | sort \
+      > /usr/share/overpressure-packages.txt; \
     git config --system --add safe.directory '*'  # the checkout (/work, a worktree's /git) is the host user's, git here runs as root
 COPY entrypoint.sh /usr/local/bin/overpressure-entrypoint
 COPY binfmt.sh /usr/local/bin/overpressure-binfmt

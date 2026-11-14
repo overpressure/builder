@@ -133,6 +133,7 @@ class RecipeTests(unittest.TestCase):
         # The base pinned by digest; the packages are what the published image holds.
         self.assertRegex(dockerfile, r"FROM ubuntu:24\.04@sha256:[0-9a-f]{64}")
         self.assertIn("/usr/share/overpressure-packages.txt", dockerfile)
+        self.assertIn("${source:Package} ${source:Version}", dockerfile)  # each package's source (README)
         for package in ("clang-20", "lld-20", "qemu-user-static", "e2fsprogs", "device-tree-compiler"):
             self.assertIn(package, dockerfile)
 

@@ -142,6 +142,8 @@ jobs:
             echo '```'
             echo
             echo "Built from image/ as of ${GITHUB_SHA}, tested and published as it was built; the packages of each variant are attached."
+            echo
+            echo "The image holds Ubuntu 24.04's packages under their own licenses; each line of the package lists names a package, its version, architecture, source package and source version, whose sources are at https://launchpad.net/ubuntu/+source/SOURCE/VERSION (README, License)."
           } > notes.md
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag \
             --title "$GITHUB_REF_NAME" --notes-file notes.md packages-amd64.txt packages-arm64.txt

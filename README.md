@@ -66,4 +66,10 @@ docker build -t builder:local image
 
 ## License
 
-[The Unlicense](LICENSE). The image itself contains Ubuntu's packages under their own licenses.
+[The Unlicense](LICENSE): the Dockerfile and the scripts. The image itself contains Ubuntu 24.04's packages,
+unmodified, each under its own licenses (many GPL or LGPL), stated in the image's
+`/usr/share/doc/PACKAGE/copyright`. Their sources are Ubuntu's: each release's `packages-ARCH.txt` (in the
+image `/usr/share/overpressure-packages.txt`) lists every package with its version and its source package and
+version, and every published version of a source package, with its `.dsc`, upstream and Debian archives, is
+kept at `https://launchpad.net/ubuntu/+source/SOURCE/VERSION` (also by date on snapshot.ubuntu.com). The
+image is a build tool for developers and CI; nothing of it goes onto a headset.
