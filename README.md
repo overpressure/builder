@@ -52,9 +52,11 @@ consumers pin on purpose.
 
 ## Publishing
 
-Every push builds both variants, checks their tools and runs the scripts' tests in them
-([image.yml](.github/workflows/image.yml)). A tag `YYYY.MM.DD` (or `YYYY.MM.DD.N`) publishes them as one
-multi-arch image under that tag, with a release that names its digest and lists each variant's packages.
+Every pull request, push to `main` and tag checks both variants' tools and runs the scripts' tests in them
+([image.yml](.github/workflows/image.yml)). Each variant is built once per content of `image/` and kept as
+`ghcr.io/overpressure/builder:ci-<tree>-<arch>`; later runs pull it instead of building it again. A tag
+`YYYY.MM.DD` (or `YYYY.MM.DD.N`) publishes the tested variants as one multi-arch image under that tag, with a
+release that names its digest and lists each variant's packages. `main` changes only by pull request.
 Published images are kept: an old pin keeps working.
 
 ```sh
