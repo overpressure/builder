@@ -22,7 +22,7 @@ RUN set -eu; \
       bash ca-certificates coreutils curl diffutils findutils tar zstd xz-utils python3 e2fsprogs util-linux \
       clang-20 lld-20 qemu-user-static \
       make gcc libc6-dev "${cross[@]}" flex bison bc git perl cpio libssl-dev libelf-dev dwarves \
-      device-tree-compiler shellcheck; \
+      device-tree-compiler shellcheck ccache; \
     rm -rf /var/lib/apt/lists/*; \
     dpkg-query -W -f '${Package} ${Version} ${Architecture} ${source:Package} ${source:Version}\n' | sort \
       > /usr/share/overpressure-packages.txt; \
