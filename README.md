@@ -10,7 +10,8 @@ that pin is what makes a build's tools the same on every computer and in a year.
 Ubuntu 24.04 (the base pinned by digest) with every tool of the builds:
 
 - the kernel's toolchain: `gcc-aarch64-linux-gnu` (on amd64; on arm64 the native `gcc`), binutils, `pahole`
-  (dwarves), `device-tree-compiler`, `flex`, `bison`, `bc`, `libssl-dev`, `libelf-dev`;
+  (dwarves), `device-tree-compiler`, `flex`, `bison`, `bc`, `libssl-dev`, `libelf-dev`, and `ccache`, which keeps
+  compiled objects between a kernel's check builds (a release builds without it);
 - LLVM 20's `clang-20` and `lld-20`, which compile natively inside the userspace build's aarch64 root;
 - `qemu-user-static`, whose `qemu-aarch64-static` runs that root's programs on an x86-64 host;
 - `python3`, `git`, `make`, `e2fsprogs`, `util-linux`, `zstd`, `xz-utils`, `cpio`, `curl`, `shellcheck`.
