@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Unlicense
+# The linter's settings, overpressure's (https://github.com/overpressure/overpressure/blob/main/pyproject.toml);
+# nothing here is a Python package. CI runs ruff pinned through uvx (.github/workflows/image.yml).
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+# Every rule. What is off below conflicts with another rule, with the formatter or with how the
+# project is built, and says so; everything else is fixed, or carries a noqa with its reason.
+select = ["ALL"]
+ignore = [
+    # Incompatible with D211 and D212, which ruff keeps: no blank line before a class docstring,
+    # and a multi-line docstring's summary on its first line.
+    "D203",
+    "D213",
+    # The formatter places trailing commas (ruff's documented conflict).
+    "COM812",
+    # pytest's style: the tests are unittest (standard library only), whose assertion methods
+    # report what differed; a bare assert does not, and S101 forbids it.
+    "PT009",
+    "PT027",
+    # One with statement for several contexts needs parentheses from Python 3.10 on to wrap.
+    "SIM117",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests: their names say what they check, as docstrings would; they return nothing; their expected
+# values are literals by nature.
+"tests/**" = ["D101", "D102", "D105", "D107", "ANN201", "ANN204", "PLR2004", "S101"]
+
+[tool.ruff.lint.flake8-copyright]
+# The project's files name their license by SPDX identifier; the Unlicense has no copyright holder.
+notice-rgx = "SPDX-License-Identifier: "
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"

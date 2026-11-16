@@ -10,17 +10,19 @@
 # (README.md): consumers pull it, nobody needs to rebuild it to get the same tools.
 FROM ubuntu:24.04@sha256:24737cef17f4e22b1977df7d9a05e77c4e28b7da5b8911f8d8ccda136bf3573c
 ARG DEBIAN_FRONTEND=noninteractive
+# A failing command in a pipe fails the build (the package list's dpkg-query).
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # The kernel's cross compiler only where the host is no arm64 (there the native gcc has its name).
 RUN set -eu; \
-    arch=$(dpkg --print-architecture); \
-    apt="apt-get -o Acquire::Retries=5"; \
-    cross=$([ "$arch" = arm64 ] || echo gcc-aarch64-linux-gnu); \
-    $apt update; \
-    $apt install -y --no-install-recommends \
+    apt=(apt-get -o Acquire::Retries=5); \
+    cross=(); \
+    [ "$(dpkg --print-architecture)" = arm64 ] || cross=(gcc-aarch64-linux-gnu); \
+    "${apt[@]}" update; \
+    "${apt[@]}" install -y --no-install-recommends \
       bash ca-certificates coreutils curl diffutils findutils tar zstd xz-utils python3 e2fsprogs util-linux \
       clang-20 lld-20 qemu-user-static \
-      make gcc libc6-dev $cross flex bison bc git perl cpio libssl-dev libelf-dev dwarves device-tree-compiler \
-      shellcheck; \
+      make gcc libc6-dev "${cross[@]}" flex bison bc git perl cpio libssl-dev libelf-dev dwarves \
+      device-tree-compiler shellcheck; \
     rm -rf /var/lib/apt/lists/*; \
     dpkg-query -W -f '${Package} ${Version} ${Architecture} ${source:Package} ${source:Version}\n' | sort \
       > /usr/share/overpressure-packages.txt; \
