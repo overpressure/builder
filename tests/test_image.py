@@ -16,7 +16,6 @@ import time
 import unittest
 from pathlib import Path
 
-
 IMAGE = Path(__file__).resolve().parents[1] / "image"
 LINUX_BASH = sys.platform.startswith("linux") and shutil.which("bash") is not None
 #: What binfmt.sh writes to register: the kernel decodes the escapes itself, so they arrive as text.

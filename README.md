@@ -32,8 +32,11 @@ are built with the amd64 variant only: on arm64 the compiler is the native one, 
 
 ## The contract
 
-What overpressure's tooling (`overpressure/linux.py`) relies on. A change to it is a new image that the
-consumers pin on purpose.
+What the consumers rely on: overpressure's tooling (`IMAGE` in
+[overpressure/linux.py](https://github.com/overpressure/overpressure/blob/main/overpressure/linux.py)) and the
+packages' CI (`BUILDER` in overpressure/packages'
+[packages.yml](https://github.com/overpressure/packages/blob/main/.github/workflows/packages.yml)). A change to it
+is a new image that the consumers pin on purpose.
 
 - **How it runs.** Privileged (`--privileged`): the builds mount `/proc`, `/sys` and overlayfs and chroot.
   The checkout is bound at `/work`, the working directory; build roots live in a volume at `/var/tmp`.
@@ -56,11 +59,18 @@ Every pull request, push to `main` and tag checks both variants' tools and runs 
 ([image.yml](.github/workflows/image.yml)). Each variant is built once per content of `image/` and kept as
 `ghcr.io/overpressure/builder:ci-<tree>-<arch>`; later runs pull it instead of building it again. A tag
 `YYYY.MM.DD` (or `YYYY.MM.DD.N`) publishes the tested variants as one multi-arch image under that tag, with a
-release that names its digest and lists each variant's packages. `main` changes only by pull request.
-Published images are kept: an old pin keeps working.
+release that names its digest and lists each variant's packages; its notes list the commits to `image/` and
+each variant's packages added, removed or at another version since the previous release. `main` changes only
+by pull request; the run's last job, `ci`, passes only when the lint and both variants passed, and is the
+check `main` requires. Published images are kept: an old pin keeps working.
+
+The `ci-*` tags in `ghcr.io/overpressure/builder` are CI's cache of tested variants: never pin them. A release is
+an exact pin by digest, so there are no channels.
 
 ```sh
-python3 -m unittest -v            # the recipe test; the script tests need x86-64 Linux, root and bash
+python3 -m unittest -v      # the recipe test; the binfmt tests need bash on x86-64 Linux, the hand-back tests root
+uvx ruff@0.17.4 format --check . && uvx ruff@0.17.4 check .                       # the Python code (pyproject.toml)
+docker run --rm -i hadolint/hadolint:v2.15.1 hadolint --ignore DL3008 - < image/Dockerfile   # the Dockerfile
 docker build -t builder:local image
 ```
 
@@ -69,7 +79,8 @@ docker build -t builder:local image
 [The Unlicense](LICENSE): the Dockerfile and the scripts. The image itself contains Ubuntu 24.04's packages,
 unmodified, each under its own licenses (many GPL or LGPL), stated in the image's
 `/usr/share/doc/PACKAGE/copyright`. Their sources are Ubuntu's: each release's `packages-ARCH.txt` (in the
-image `/usr/share/overpressure-packages.txt`) lists every package with its version and its source package and
-version, and every published version of a source package, with its `.dsc`, upstream and Debian archives, is
-kept at `https://launchpad.net/ubuntu/+source/SOURCE/VERSION` (also by date on snapshot.ubuntu.com). The
-image is a build tool for developers and CI; nothing of it goes onto a headset.
+image `/usr/share/overpressure-packages.txt`) lists every package with its version and architecture, and from
+the release after 2026.11.12 on also its source package and source version (2026.11.12's lists carry name,
+version and architecture only). Every published version of a source package, with its `.dsc`, upstream and
+Debian archives, is kept at `https://launchpad.net/ubuntu/+source/SOURCE/VERSION` (also by date on
+snapshot.ubuntu.com). The image is a build tool for developers and CI; nothing of it goes onto a headset.
