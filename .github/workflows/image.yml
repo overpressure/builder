@@ -2,7 +2,8 @@
 # Every pull request, push to main and tag: the image on amd64 and arm64, its tools checked and its
 # scripts' tests run in it. Each variant is built once per content of image/: the build is kept as
 # ghcr.io/overpressure/builder:ci-<image/'s tree>-<arch>, and a later run (main after the merge, the tag)
-# pulls it instead of building it again. A tag (YYYY.MM.DD, or YYYY.MM.DD.N for a second one that day)
+# pulls it instead of building it again. A tag (a calendar version as overpressure's releases: YYYY.M.PATCH,
+# this month's next free patch; the first two releases were named by their day, 2026.11.12 and 2026.11.16)
 # publishes the tested variants as one multi-arch image, ghcr.io/overpressure/builder:TAG, and a release
 # naming its digest, with each variant's packages and versions and what changed since the previous release.
 # The last job, ci, passes only when the lint and both variants passed: the one check main's ruleset requires.
@@ -11,7 +12,7 @@ name: Image
 on:
   push:
     branches: [main]
-    tags: ["[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]*"]
+    tags: ["20[0-9][0-9].*"]
   pull_request:
   workflow_dispatch:
 

@@ -59,7 +59,10 @@ is a new image that the consumers pin on purpose.
 Every pull request, push to `main` and tag checks both variants' tools and runs the scripts' tests in them
 ([image.yml](.github/workflows/image.yml)). Each variant is built once per content of `image/` and kept as
 `ghcr.io/overpressure/builder:ci-<tree>-<arch>`; later runs pull it instead of building it again. A tag
-`YYYY.MM.DD` (or `YYYY.MM.DD.N`) publishes the tested variants as one multi-arch image under that tag, with a
+that is a calendar version, as overpressure's releases
+([versions across the project](https://github.com/overpressure/overpressure/blob/main/docs/releasing.md#versions-across-the-project)):
+`YYYY.M.PATCH`, this month's next free patch (after 2026.11.12 and 2026.11.16, named by their day, `2026.11.17`),
+publishes the tested variants as one multi-arch image under that tag, with a
 release that names its digest and lists each variant's packages; its notes list the commits to `image/` and
 each variant's packages added, removed or at another version since the previous release. `main` changes only
 by pull request; the run's last job, `ci`, passes only when the lint and both variants passed, and is the
